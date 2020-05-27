@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -60,22 +61,25 @@ func tableInfo(connectionInformation string, tableNameList []tableNameType) (ret
 func main() {
 	var userName, password, host string
 	userName = "root"
-	password = "mysql"
+	password = "mysql123"
 	host = "127.0.0.1"
 	connectionInformation := fmt.Sprintf("%s:%s@tcp(%s:3306)", userName, password, host)
 	tableNameList, err := tableNames(connectionInformation)
 	if err != nil {
 		fmt.Println(err.Error())
+		os.Exit(1)
 	}
 
 	tableInfoList, err := tableInfo(connectionInformation, tableNameList)
 	if err != nil {
 		fmt.Println(err.Error())
+		os.Exit(1)
 	}
 
 	json, err := json.Marshal(tableInfoList)
 	if err != nil {
 		fmt.Println(err.Error())
+		os.Exit(1)
 	}
 	fmt.Println(string(json))
 
