@@ -21,7 +21,7 @@ func tableNames(connectionInformation string) (ret []tableNameType, err error) {
 	}
 	defer informationSchemaDB.Close()
 
-	rows, err := informationSchemaDB.Query("SELECT TABLE_SCHEMA, TABLE_NAME FROM tables")
+	rows, err := informationSchemaDB.Query("SELECT TABLE_SCHEMA, TABLE_NAME FROM tables WHERE TABLE_SCHEMA = 'test'")
 	for rows.Next() {
 		var tableSchema, tableName string
 		err = rows.Scan(&tableSchema, &tableName)
