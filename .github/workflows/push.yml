@@ -78,4 +78,4 @@ jobs:
         run: chmod +x mysqlRowsCount/mysqlRowsCount
 
       - name: Test
-        run: mysqlRowsCount/mysqlRowsCount
+        run: mysqlRowsCount/mysqlRowsCount --config ./config.json --port ${{ job.services.mysql.ports['3306'] }}
