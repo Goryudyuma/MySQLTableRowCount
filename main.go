@@ -76,6 +76,14 @@ type mysqlConnection struct {
 	Port     int    `json:"port"`
 }
 
+func (connectionConfig mysqlConnection) dataSourceName() string {
+	return fmt.Sprintf("%s:%s@tcp(%s:%d)",
+		connectionConfig.UserName,
+		connectionConfig.Password,
+		connectionConfig.Host,
+		connectionConfig.Port)
+}
+
 type configType struct {
 	MySQLConnection mysqlConnection `json:"connection"`
 }
@@ -109,7 +117,7 @@ func main() {
 		config.MySQLConnection.Port = *port
 	}
 
-	connectionInformation := fmt.Sprintf("%s:%s@tcp(%s:%d)", config.MySQLConnection.UserName, config.MySQLConnection.Password, config.MySQLConnection.Host, config.MySQLConnection.Port)
+	connectionInformation := config.MySQLConnection.dataSourceName()
 	tableNameList, err := tableNames(connectionInformation)
 	if err != nil {
 		fmt.Println(err.Error())
