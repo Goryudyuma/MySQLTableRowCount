@@ -3,7 +3,9 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -21,7 +23,16 @@ func tableNames(connectionInformation string) (ret []tableNameType, err error) {
 	}
 	defer informationSchemaDB.Close()
 
+	err = informationSchemaDB.Ping()
+	if err != nil {
+		return
+	}
+
 	rows, err := informationSchemaDB.Query("SELECT TABLE_SCHEMA, TABLE_NAME FROM tables WHERE TABLE_SCHEMA = 'test'")
+	if err != nil {
+		return
+	}
+
 	for rows.Next() {
 		var tableSchema, tableName string
 		err = rows.Scan(&tableSchema, &tableName)
@@ -58,12 +69,47 @@ func tableInfo(connectionInformation string, tableNameList []tableNameType) (ret
 	return
 }
 
+type mysqlConnection struct {
+	UserName string `json:"username"`
+	Password string `json:"password"`
+	Host     string `json:"host"`
+	Port     int    `json:"port"`
+}
+
+type configType struct {
+	MySQLConnection mysqlConnection `json:"connection"`
+}
+
+func readConfig(filePath string) (ret configType, err error) {
+	if filePath == "" {
+		return
+	}
+
+	configFileBytes, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(configFileBytes, &ret)
+	return
+}
+
 func main() {
-	var userName, password, host string
-	userName = "root"
-	password = "mysql123"
-	host = "127.0.0.1"
-	connectionInformation := fmt.Sprintf("%s:%s@tcp(%s:3306)", userName, password, host)
+
+	configPath := flag.String("config", "", "path of config file")
+	port := flag.Int("port", -1, "port")
+	flag.Parse()
+	config, err := readConfig(*configPath)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
+	if *port != -1 {
+		config.MySQLConnection.Port = *port
+	}
+
+	connectionInformation := fmt.Sprintf("%s:%s@tcp(%s:%d)", config.MySQLConnection.UserName, config.MySQLConnection.Password, config.MySQLConnection.Host, config.MySQLConnection.Port)
 	tableNameList, err := tableNames(connectionInformation)
 	if err != nil {
 		fmt.Println(err.Error())
