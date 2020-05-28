@@ -97,7 +97,7 @@ func readConfig(filePath string) (ret configType, err error) {
 func main() {
 
 	configPath := flag.String("config", "", "path of config file")
-	port := flag.Int("port", -1, "port")
+	port := flag.Int("port", 0, "port")
 	flag.Parse()
 	config, err := readConfig(*configPath)
 	if err != nil {
@@ -105,7 +105,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if *port != -1 {
+	if *port != 0 {
 		config.MySQLConnection.Port = *port
 	}
 
