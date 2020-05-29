@@ -69,14 +69,23 @@ func tableInfo(connectionInformation string, tableNameList []tableNameType) (ret
 	return
 }
 
-type mysqlConnection struct {
+type mysqlConnectionType struct {
 	UserName string `json:"username"`
 	Password string `json:"password"`
 	Host     string `json:"host"`
 	Port     int    `json:"port"`
 }
 
-func (connectionConfig mysqlConnection) dataSourceName() string {
+func newMySQLConnectionType() mysqlConnectionType {
+	return mysqlConnectionType{
+		UserName: "root",
+		Password: "password",
+		Host:     "127.0.0.1",
+		Port:     3306,
+	}
+}
+
+func (connectionConfig mysqlConnectionType) dataSourceName() string {
 	return fmt.Sprintf("%s:%s@tcp(%s:%d)",
 		connectionConfig.UserName,
 		connectionConfig.Password,
@@ -85,10 +94,17 @@ func (connectionConfig mysqlConnection) dataSourceName() string {
 }
 
 type configType struct {
-	MySQLConnection mysqlConnection `json:"connection"`
+	MySQLConnection mysqlConnectionType `json:"connection"`
+}
+
+func newConfigType() configType {
+	return configType{
+		MySQLConnection: newMySQLConnectionType(),
+	}
 }
 
 func readConfig(filePath string) (ret configType, err error) {
+	ret = newConfigType()
 	if filePath == "" {
 		return
 	}
