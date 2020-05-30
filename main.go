@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"flag"
@@ -118,40 +119,75 @@ func readConfig(filePath string) (ret configType, err error) {
 	return
 }
 
+const (
+	generateConfigJSONCommand = "generate-config-json"
+	helpCommand               = "help"
+	runCommand                = "run"
+)
+
+func helpPage() error {
+	return fmt.Errorf(generateConfigJSONCommand + " " + runCommand + " " + helpCommand)
+}
+
 func main() {
+	flag.ErrHelp = helpPage()
+	flag.Usage = func() { fmt.Println(helpPage().Error()) }
 
-	configPath := flag.String("config", "", "path of config file")
-	port := flag.Int("port", 0, "port")
-	flag.Parse()
-	config, err := readConfig(*configPath)
-	if err != nil {
-		fmt.Println(err.Error())
+	if len(os.Args) < 2 {
+		flag.Usage()
 		os.Exit(1)
 	}
 
-	if *port != 0 {
-		config.MySQLConnection.Port = *port
-	}
+	runCommandFlagSet := flag.NewFlagSet(runCommand, flag.ExitOnError)
+	configPath := runCommandFlagSet.String("config", "", "path of config file")
+	port := runCommandFlagSet.Int("port", 0, "port")
 
-	connectionInformation := config.MySQLConnection.dataSourceName()
-	tableNameList, err := tableNames(connectionInformation)
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
+	switch os.Args[1] {
+	case generateConfigJSONCommand:
+		configJSON, err := json.Marshal(newConfigType())
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
+		out := new(bytes.Buffer)
+		json.Indent(out, configJSON, "", "  ")
+		fmt.Println(out.String())
+		os.Exit(0)
+	case helpCommand:
+		fmt.Println(helpPage())
+		os.Exit(0)
+	case runCommand:
+		runCommandFlagSet.Parse(os.Args[2:])
 
-	tableInfoList, err := tableInfo(connectionInformation, tableNameList)
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
+		config, err := readConfig(*configPath)
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
 
-	json, err := json.Marshal(tableInfoList)
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-	fmt.Println(string(json))
+		if *port != 0 {
+			config.MySQLConnection.Port = *port
+		}
 
+		connectionInformation := config.MySQLConnection.dataSourceName()
+		tableNameList, err := tableNames(connectionInformation)
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
+
+		tableInfoList, err := tableInfo(connectionInformation, tableNameList)
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
+
+		json, err := json.Marshal(tableInfoList)
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
+		fmt.Println(string(json))
+	}
 	return
 }
